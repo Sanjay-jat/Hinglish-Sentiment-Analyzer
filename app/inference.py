@@ -7,7 +7,10 @@ import os
 import torch
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, '..', 'models')
+if os.path.exists(os.path.join(BASE_DIR, 'models')):
+    MODEL_DIR = os.path.join(BASE_DIR, 'models')
+else:
+    MODEL_DIR = os.path.join(BASE_DIR, '..', 'models')
 
 with open(os.path.join(MODEL_DIR, 'config.json')) as f:
     config = json.load(f)
