@@ -1,13 +1,19 @@
 import gradio as gr
 from inference import predict
+import os
 
+import requests
 
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000/predict")
 
 
 def gradio_predict(text):
-    result = predict(text)
-    return f"{result['label'].upper()} (confidence: {result['confidence']*100:.1f}%)"
+    response = requests.post(API_URL, json={"text": text})
+    if response.status_code == 200:
+        result = response.json()
+        return f"{result['label'].upper()} (confidence: {result['confidence']*100:.1f}%)"
+    else:
+        return f"Error: {response.status_code} - {response.text}"
 
 
 demo = gr.Interface(
@@ -26,4 +32,5 @@ demo = gr.Interface(
 )
 
 if __name__ == '__main__':
-    demo.launch()
+    port = int(os.environ.get("PORT", 7860))
+    demo.launch(server_name="0.0.0.0", server_port=port)
