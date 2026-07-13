@@ -8,13 +8,15 @@ API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000/predict")
 
 
 def gradio_predict(text):
-    response = requests.post(API_URL, json={"text": text})
-    if response.status_code == 200:
-        result = response.json()
-        return f"{result['label'].upper()} (confidence: {result['confidence']*100:.1f}%)"
-    else:
-        return f"Error: {response.status_code} - {response.text}"
-
+    try:
+        response = requests.post(API_URL, json={"text": text}, timeout=90)
+        if response.status_code == 200:
+            result = response.json()
+            return f"{result['label'].upper()} (confidence: {result['confidence']*100:.1f}%)"
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+    except requests.exceptions.Timeout:
+        return "The model is waking up from sleep. Please try again in a moment."
 
 demo = gr.Interface(
     fn=gradio_predict,
