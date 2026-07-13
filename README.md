@@ -1,175 +1,169 @@
-# 🎭 Hinglish Sentiment Analyzer
+# Hinglish Sentiment Analyzer
  
-**Because "यह movie बहुत अच्छी है" deserves better than Google Translate butchering it before your sentiment model even gets a chance.**
+> Sentiment analysis for Hindi-English code-mixed text — the way India actually types. Custom CNN + FastText + SentencePiece pipeline, trained from scratch on SemEval-2020 Task 9, deployed as a live two-service app.
  
-A sentiment analysis engine built specifically for **Hindi-English code-mixed text** — the way people *actually* type on Twitter, WhatsApp, and every Indian comment section on the internet. No pure Hindi. No pure English. Just the real, chaotic, beautiful mess of Hinglish.
+![Macro F1](https://img.shields.io/badge/Macro%20F1-65%25-yellow) ![Vocab](https://img.shields.io/badge/Vocab-8K%20BPE-blue) ![FastText Coverage](https://img.shields.io/badge/FastText%20Coverage-86.8%25-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-CNN-red) ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688) ![Gradio](https://img.shields.io/badge/Gradio-frontend-orange) ![deployed](https://img.shields.io/badge/deployed-live-brightgreen)
  
-🔗 **Live App:** [hinglish-sentiment-frontend.onrender.com](https://hinglish-sentiment-frontend.onrender.com)
-🔗 **API Docs:** [hinglish-sentiment-backend.onrender.com/docs](https://hinglish-sentiment-backend.onrender.com/docs)
+🚀 **Live Demo →** [hinglish-sentiment-frontend.onrender.com](https://hinglish-sentiment-frontend.onrender.com)
+🔌 **API Docs →** [hinglish-sentiment-backend.onrender.com/docs](https://hinglish-sentiment-backend.onrender.com/docs)
  
-> ⏳ **Heads up:** This is hosted on Render's free tier, which puts the backend to sleep after 15 minutes of inactivity. If the app feels slow on your first try, that's just the model waking up (~30–60 seconds) — not a bug. Give it a moment and it'll be snappy after that.
+Deployed on **Render** (backend) · **Render** (frontend) — two independent services talking over real HTTP.
  
----
- 
-## 🧠 What This Actually Does
- 
-Type a sentence like this:
- 
-> `"यार वो movie itni bakwaas thi, waste of time."`
- 
-And get back:
- 
-> `NEGATIVE (confidence: 94.2%)`
- 
-No transliteration tricks. No translating to English first and losing all the nuance. The model reads Hinglish as Hinglish.
+> ⏳ **Free-tier note:** The backend sleeps after 15 min of inactivity. First request after a nap takes ~30–60s to wake it up — after that, it's instant. Not a bug, just the price of "free forever."
  
 ---
  
-## 🤔 Why This Is Harder Than It Sounds
+## Screenshots
  
-Sentiment analysis is a solved problem for English. It is *not* a solved problem for Hinglish, and here's why:
+### Live App — Sentiment in Real Time
  
-- **No standard spelling.** "अच्छा", "acha", "achha", "accha" — all the same word, four different spellings, and a naive tokenizer treats them as four unrelated strangers.
-- **Script-switching mid-sentence.** Devanagari and Latin script often show up in the *same tweet*, sometimes the *same sentence*.
-- **No labeled data at scale.** Unlike English, there's no massive pretrained sentiment corpus lying around for this.
-This project tackles all three head-on, using subword tokenization and pretrained embeddings specifically chosen to handle exactly this kind of linguistic chaos.
+Type Hinglish. Get a label and a confidence score. That's it.
+ 
+*(Add a screenshot of the running app here — text box, prediction, examples)*
  
 ---
  
-## 🏗️ How It's Built
+## What This Actually Does
+ 
+Type a sentence like:
  
 ```
-Raw Tweets (SemEval-2020 Task 9 — SentiMix Hinglish)
+यार वो movie itni bakwaas thi, waste of time.
+```
+ 
+Get back:
+ 
+```
+NEGATIVE (confidence: 94.2%)
+```
+ 
+No transliteration hacks. No translate-to-English-first-and-lose-all-the-nuance shortcuts. The model reads Hinglish as Hinglish — because that's how ~600 million people online actually write.
+ 
+---
+ 
+## Why This Is Harder Than It Looks
+ 
+Sentiment analysis on English is a solved problem. Hinglish is a different beast entirely:
+ 
+- **No standard spelling.** "अच्छा" / "acha" / "achha" / "accha" are the same word — a naive tokenizer sees four unrelated strangers.
+- **Script-switching mid-sentence.** Devanagari and Latin script routinely show up in the *same tweet*.
+- **No pretrained sentiment corpus at scale.** Unlike English, there's no giant labeled dataset lying around.
+This project handles all three with subword tokenization and pretrained embeddings chosen specifically for this kind of chaos — not bolted on as an afterthought.
+ 
+---
+ 
+## Tech Stack
+ 
+| Layer | Choice |
+|---|---|
+| 🔤 Tokenization | SentencePiece — 8,000-token BPE vocabulary |
+| 🧬 Embeddings | FastText (Hindi, 300-dim, Common Crawl) |
+| 🧠 Model | PyTorch — 1D CNN, Yoon Kim architecture |
+| ⚡ Backend | FastAPI |
+| 🎛️ Frontend | Gradio |
+| 🏋️ Training | Google Colab (GPU) |
+| ☁️ Deployment | Render — two independent services |
+| 📚 Dataset | SemEval-2020 Task 9 (SentiMix Hinglish) |
+ 
+---
+ 
+## Architecture
+ 
+```
+Raw Tweets (SemEval-2020 Task 9)
         ↓
 Text Cleaning (strip RT, mentions, whitespace noise)
         ↓
-SentencePiece Tokenization (8,000-token BPE vocabulary)
+SentencePiece Tokenization (8K BPE vocab)
         ↓
-FastText Embeddings (300-dim, Hindi Common Crawl vectors)
+FastText Embeddings (300-dim, Hindi Common Crawl)
         ↓
-1D CNN — Yoon Kim architecture
-   (parallel conv filters of size 2/3/4/5 → max-pool → dense → softmax)
+1D CNN — parallel conv filters (size 2/3/4/5) → max-pool → dense → softmax
         ↓
-FastAPI backend (/predict endpoint)
-        ↓
-Gradio frontend (talks to backend over real HTTP, not a local import)
+FastAPI (/predict) ←→ Gradio (real HTTP, not a local import)
 ```
  
-### Why a CNN, not a Transformer?
+**Why a CNN, not a transformer?** Sentiment in short, tweet-length text is usually carried by local phrase cues — "bahut bekaar", "ekdum mast", "bilkul sahi" — not long-range grammar. A CNN captures this efficiently, trains in minutes, and runs comfortably on a free CPU server. The boring architecture is sometimes the right one.
  
-Because not every problem needs a sledgehammer. Sentiment in short, tweet-length text is usually carried by local phrase-level cues — "bahut bekaar", "ekdum mast", "bilkul sahi" — not long-range grammatical dependencies. A lightweight CNN captures this efficiently, trains in minutes instead of hours, and is cheap enough to run comfortably on a free-tier CPU server. Sometimes the boring architecture is the right architecture.
- 
-### Why SentencePiece + FastText?
- 
-- **SentencePiece** breaks words into subword pieces learned directly from the corpus, so spelling variants share structure instead of being total strangers to the model.
-- **FastText** embeddings are themselves built from character n-grams, meaning even words the model has never seen get a sensible starting vector instead of a random guess.
-Together, they give the model a fighting chance against a language that refuses to sit still.
+**Why SentencePiece + FastText?** SentencePiece breaks words into subword pieces learned from the corpus, so spelling variants share structure instead of being strangers. FastText embeddings are themselves built from character n-grams, so even unseen words get a sensible starting vector instead of a random guess.
  
 ---
  
-## 📊 Results — And an Honest Confession
+## Results — And a Confession
  
 **Macro F1: 65%** on a held-out test set with zero exact overlap with training data.
  
-That number might look modest next to headlines claiming 90%+ accuracy — but here's the thing: those numbers are usually a lie, and this project actually caught one in the act. During development, this model briefly hit **99% accuracy**, which is basically impossible for 3-class sentiment analysis and was a dead giveaway of data leakage. A full investigation followed: checking for duplicate tweets across train/test splits, verifying near-duplicate contamination, decoding raw tokenized input to manually sanity-check predictions, and rebuilding the pipeline from scratch once the leak was found and patched.
+That number looks modest next to headline claims of 90%+ accuracy — and that's exactly the point. Mid-development, this model briefly hit **99% accuracy**, which is essentially impossible for 3-class sentiment analysis. Instead of shipping it, the number got investigated: checked for duplicate tweets across splits, verified near-duplicate contamination separately, manually decoded raw tokenized input to sanity-check predictions by hand, and rebuilt the pipeline from scratch once the leak was confirmed and patched.
  
-The real result — 65% macro F1 — sits comfortably alongside the official **SemEval-2020 Task 9** competition benchmarks, where top BERT-based submissions topped out around **75% F1**. A lightweight CNN landing within ~10 points of a fine-tuned transformer, on messy real-world social media text, is a legitimately solid result.
+The real result — 65% macro F1 — sits right alongside the official **SemEval-2020 Task 9** benchmarks, where top BERT-based submissions topped out around **75% F1**. A lightweight CNN landing within ~10 points of a fine-tuned transformer, on real, messy social-media text, is a legitimately solid result.
  
-**Where it struggles:** the *neutral* class — which, if you think about it, makes complete sense. "Neutral" isn't the absence of sentiment words; it's sentiment-adjacent language (polite phrases, routine greetings, informational tone) that doesn't actually carry strong emotion. Telling "थैंक यू" apart from genuine enthusiasm requires contextual understanding that static embeddings and local convolutions simply don't have. It's a well-documented hard case in sentiment analysis research, not a flaw unique to this model.
- 
----
- 
-## ⚙️ Tech Stack
- 
-| Layer | Tools |
-|---|---|
-| Tokenization | SentencePiece (BPE) |
-| Embeddings | FastText (Hindi, 300-dim) |
-| Model | PyTorch — 1D CNN (Yoon Kim architecture) |
-| Backend | FastAPI |
-| Frontend | Gradio |
-| Training | Google Colab (GPU) |
-| Deployment | Render (2 independent services) |
-| Data | SemEval-2020 Task 9 (SentiMix Hinglish) |
+**Weakest class: neutral.** Makes sense once you think about it — "neutral" isn't the *absence* of sentiment words, it's sentiment-adjacent language (polite phrases, routine greetings) that doesn't actually carry strong emotion. Separating "थैंक यू" from genuine enthusiasm needs contextual understanding that static embeddings and local convolutions don't have. A well-documented hard case in the literature, not a flaw unique to this build.
  
 ---
  
-## 🚀 Running It Locally
+## Running It Locally
  
-**1. Clone and install:**
 ```bash
 git clone https://github.com/Sanjay-jat/Hinglish-Sentiment-Analyzer.git
 cd Hinglish-Sentiment-Analyzer
 pip install -r requirements.txt
 ```
  
-**2. Start the backend:**
+**Backend:**
 ```bash
 cd app
 uvicorn main:app --reload
+# → http://127.0.0.1:8000/docs
 ```
-Visit `http://127.0.0.1:8000/docs` for the interactive API.
  
-**3. Start the frontend** (in a separate terminal):
+**Frontend** (separate terminal):
 ```bash
 cd app
 python gradio_app.py
+# → http://127.0.0.1:7860
 ```
-Visit `http://127.0.0.1:7860`.
  
 ---
  
-## 🔌 API Reference
+## API Reference
  
 **POST** `/predict`
  
 ```json
 // Request
-{
-  "text": "यह movie बहुत अच्छी है"
-}
+{ "text": "यह movie बहुत अच्छी है" }
  
 // Response
-{
-  "label": "positive",
-  "confidence": 0.9142
-}
+{ "label": "positive", "confidence": 0.9142 }
 ```
  
 ---
  
-## 📁 Project Structure
+## Project Structure
  
 ```
 Hinglish-sentiment/
 ├── app/
-│   ├── main.py          # FastAPI backend
-│   ├── inference.py      # Model loading + prediction logic
-│   └── gradio_app.py      # Gradio frontend
+│   ├── main.py            # FastAPI backend
+│   ├── inference.py        # Model loading + prediction logic
+│   └── gradio_app.py        # Gradio frontend
 ├── models/
-│   ├── hinglish_cnn.pt    # Trained model weights
-│   ├── hinglish_sp.model  # SentencePiece tokenizer
-│   └── config.json        # Model architecture config
+│   ├── hinglish_cnn.pt      # Trained model weights
+│   ├── hinglish_sp.model    # SentencePiece tokenizer
+│   └── config.json          # Model architecture config
 ├── notebooks/
-│   └── Hinglish_Sentiment.ipynb   # Full training pipeline
+│   └── Hinglish_Sentiment.ipynb
 ├── requirements.txt
 └── README.md
 ```
  
 ---
  
-## 🙋 Who This Is For
- 
-- **Recruiters/interviewers** who want to see the full ML lifecycle done properly: data investigation, honest evaluation, a real debugging story, and actual deployment — not just a Jupyter notebook that says "accuracy: 0.98" with no explanation.
-- **Developers** working with Indian-language NLP who need a starting point for Hinglish text classification.
-- **Anyone curious** what happens when you feed a neural network the exact way Indians actually type online.
----
- 
-## 👤 Author
+## About Me
  
 **Sanjay Jat**
-🔗 [GitHub](https://github.com/Sanjay-jat) · [LinkedIn](https://www.linkedin.com/in/sanjay-jat/)
+3rd-year BTech CSE student building an AI/Backend engineering portfolio, one honestly-debugged project at a time.
  
----
+[![GitHub](https://img.shields.io/badge/GitHub-Sanjay--jat-181717?logo=github)](https://github.com/Sanjay-jat) [![LinkedIn](https://img.shields.io/badge/LinkedIn-sanjay--jat-0077B5?logo=linkedin)](https://www.linkedin.com/in/sanjay-jat/)
  
-*Built with genuine, hard-earned debugging scars and a healthy suspicion of any accuracy number above 90%.*
+*If your accuracy is above 95% on a 3-class problem, check for data leakage before you check for a job.*
