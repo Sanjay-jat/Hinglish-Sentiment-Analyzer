@@ -18,7 +18,7 @@ Deployed on **Render** — two independent services (backend + frontend) talking
  
 Type Hinglish. Get a label and a confidence score. That's it.
  
-*(Add a screenshot of the running app here — text box, prediction, examples)*
+![App Screenshot](assets/app-screenshot.png)
  
 ---
  
